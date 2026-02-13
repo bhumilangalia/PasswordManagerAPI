@@ -229,7 +229,8 @@ passwordsGroup.MapGet("/", async (
             cipher.Decrypt(e.EncryptedPassword),
             e.Notes,
             e.CreatedAtUtc,
-            e.UpdatedAtUtc)).ToList();
+            e.UpdatedAtUtc,
+            null)).ToList();
 
         return Results.Ok(result);
     }
@@ -274,7 +275,8 @@ passwordsGroup.MapGet("/{id:int}", async (
             decryptedPassword,
             entry.Notes,
             entry.CreatedAtUtc,
-            entry.UpdatedAtUtc));
+            entry.UpdatedAtUtc,
+            null));
     }
     catch (Exception ex) when (ex is CryptographicException or ArgumentNullException)
     {
