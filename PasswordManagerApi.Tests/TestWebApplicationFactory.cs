@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using PasswordManagerApi.Data;
 
 namespace PasswordManagerApi.Tests;
@@ -31,30 +32,22 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Remove SQLite DbContext registration
-            var dbContextDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (dbContextDescriptor != null)
-            {
-                services.Remove(dbContextDescriptor);
-            }
+            // Remove ALL DbContext-related registrations
+            // This prevents the "multiple database providers" error
+            services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
+            services.RemoveAll(typeof(DbContextOptions));
+            services.RemoveAll(typeof(AppDbContext));
 
-            // Also remove the DbContext itself
-            var dbContextServiceDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(AppDbContext));
-            if (dbContextServiceDescriptor != null)
-            {
-                services.Remove(dbContextServiceDescriptor);
-            }
-
-            // Add in-memory database with unique name for each test
+            // Add in-memory database for testing
+            // Each test gets a unique database to ensure complete isolation
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
+                options.EnableSensitiveDataLogging();
+                options.EnableDetailedErrors();
             });
 
             // Keep real DataProtection for actual encryption/decryption testing
-            // This is important - we want to test real encryption behavior
         });
     }
 
