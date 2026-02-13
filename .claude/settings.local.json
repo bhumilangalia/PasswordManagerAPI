@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet test:*)",
+      "Bash(dotnet build:*)",
+      "Bash(curl:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjMiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidGVzdHVzZXIxIiwiZXhwIjoxNzcwOTk5NzU1LCJpc3MiOiJQYXNzd29yZE1hbmFnZXJBcGkiLCJhdWQiOiJQYXNzd29yZE1hbmFnZXJBcGlVc2VycyJ9.d9J2tY5yR_2d34NISQRVDU2DRYhFhsjA3MYGK0qmFmo\")",
+      "Bash(__NEW_LINE_60eb448baf70ba7e__ curl -s -X POST http://localhost:5103/api/passwords -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" -d \"{\"\"title\"\":\"\"Gmail Account\"\",\"\"password\"\":\"\"MySecretPassword123!\"\",\"\"loginUsername\"\":\"\"user@gmail.com\"\",\"\"website\"\":\"\"https://gmail.com\"\",\"\"notes\"\":\"\"Personal email\"\"}\")",
+      "Bash(sqlite3:*)",
+      "Bash(__NEW_LINE_338b3a2e8f5d4c30__ echo \"=== GET password by ID ===\")",
+      "Bash(__NEW_LINE_338b3a2e8f5d4c30__ echo \"\")",
+      "Bash(__NEW_LINE_760edb75156186e8__ echo \"=== Test with special characters ===\")",
+      "Bash(__NEW_LINE_760edb75156186e8__ echo \"\")",
+      "Bash(__NEW_LINE_4ca4c0ebaa2936b6__ echo \"=== Retrieve special chars entry ===\")",
+      "Bash(__NEW_LINE_4ca4c0ebaa2936b6__ echo \"\")",
+      "Bash(__NEW_LINE_921c46fb66b59340__ echo \"=== Update title only \\(should decrypt existing password\\) ===\")",
+      "Bash(__NEW_LINE_4a59e3cfc9640005__ echo \"=== Test unauthorized access \\(no token\\) ===\")",
+      "Bash(__NEW_LINE_4a59e3cfc9640005__ echo \"\")",
+      "Bash(find:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet list:*)",
+      "Bash(ls:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout 5 dotnet run:*)",
+      "Bash(set ASPNETCORE_ENVIRONMENT=Development)",
+      "Bash(JWT_SECRET_KEY=\"TestSecretKey123456789012345678901234567890123456789012345678901234\" timeout 5 dotnet run:*)",
+      "Bash(export ASPNETCORE_ENVIRONMENT=Development)",
+      "Bash(dotnet clean:*)",
+      "Bash(export ASPNETCORE_ENVIRONMENT=Production)",
+      "Bash(timeout 2 dotnet run:*)",
+      "Bash(pkill:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

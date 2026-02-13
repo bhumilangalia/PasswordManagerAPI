@@ -1,0 +1,37 @@
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+# Database files - CRITICAL: Do not commit user data
+*.db
+*.db-shm
+*.db-wal
+
+# Log files - May contain sensitive information
+*.log
+app.log
+logs/
+
+# Environment-specific configuration - CRITICAL: Contains secrets
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+
+# Secrets and keys
+secrets.json
+*.pfx
+*.key
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
