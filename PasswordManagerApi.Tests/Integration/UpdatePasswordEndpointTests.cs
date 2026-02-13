@@ -36,12 +36,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var user = await builder.CreateUserAsync("testuser1");
         var entry = await builder.CreatePasswordEntryAsync(user.Id, "OldPassword@123", "Test Entry");
 
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "Updated Entry",
-            Password: "NewPassword@456",
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title ="Updated Entry",
+            Password ="NewPassword@456",
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var token = JwtTokenHelper.CreateToken(user, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -71,12 +73,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var existingPassword = "ExistingPassword@123";
         var entry = await builder.CreatePasswordEntryAsync(user.Id, existingPassword, "Old Title");
 
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "New Title",
-            Password: null,
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title ="New Title",
+            Password =null,
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var token = JwtTokenHelper.CreateToken(user, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -108,12 +112,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         // Corrupt the existing password
         await DatabaseHelper.CorruptPasswordEntryAsync(db, entry.Id);
 
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "New Title",
-            Password: null,
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title ="New Title",
+            Password =null,
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var token = JwtTokenHelper.CreateToken(user, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -144,12 +150,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         // Corrupt the old password
         await DatabaseHelper.CorruptPasswordEntryAsync(db, entry.Id);
 
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "Updated Entry",
-            Password: "NewValidPassword@123",
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title ="Updated Entry",
+            Password ="NewValidPassword@123",
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var token = JwtTokenHelper.CreateToken(user, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -179,12 +187,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var entry = await builder.CreatePasswordEntryAsync(user.Id, "OldPassword", "Test Entry");
 
         var unicodePassword = "密碼🔐Пароль@123";
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: null,
-            Password: unicodePassword,
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title =null,
+            Password =unicodePassword,
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var token = JwtTokenHelper.CreateToken(user, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -216,12 +226,14 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var entry = await builder.CreatePasswordEntryAsync(userA.Id, "UserAPassword", "User A Entry");
 
         // Try to update with user B's token
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "Hacked Title",
-            Password: null,
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title ="Hacked Title",
+            Password =null,
+            LoginUsername =null,
+            Website =null,
+            Notes = null
+        };
 
         var tokenB = JwtTokenHelper.CreateToken(userB, config);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenB);

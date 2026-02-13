@@ -166,12 +166,14 @@ public class AuthorizationTests : IClassFixture<TestWebApplicationFactory>
         var entry = await builder.CreatePasswordEntryAsync(user.Id, "Password", "Entry");
 
         // Don't set Authorization header
-        var updateRequest = new UpdatePasswordEntryRequest(
-            Title: "Hacked",
-            Password: null,
-            LoginUsername: null,
-            Website: null,
-            Notes: null);
+        var updateRequest = new UpdatePasswordEntryRequest
+        {
+            Title = "Hacked",
+            Password = null,
+            LoginUsername = null,
+            Website = null,
+            Notes = null
+        };
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/passwords/{entry.Id}", updateRequest);
