@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
 using PasswordManagerApi.DTOs;
+using PasswordManagerApi.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -36,7 +37,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             Password = "PerfTest123!"
         });
 
-        var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth = await JsonHelper.DeserializeAsync<AuthResponse>(loginResponse.Content);
         return auth!.Token;
     }
 
@@ -64,7 +65,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var passwords = await response.Content.ReadFromJsonAsync<List<PasswordEntryResponse>>();
+        var passwords = await JsonHelper.DeserializeAsync<List<PasswordEntryResponse>>(response.Content);
         passwords.Should().HaveCount(100);
 
         _output.WriteLine($"Time to retrieve 100 entries: {sw.ElapsedMilliseconds}ms");
@@ -157,7 +158,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             Password = "Original123!"
         });
 
-        var created = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
 
         var updateRequest = new UpdatePasswordEntryRequest
         {
@@ -189,7 +190,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
             Password = "Delete123!"
         });
 
-        var created = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
 
         // Act
         var sw = Stopwatch.StartNew();
@@ -207,6 +208,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
     {
         // Arrange
         var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var tasks = new List<Task<HttpResponseMessage>>();
 
@@ -214,10 +216,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
         var sw = Stopwatch.StartNew();
         for (int i = 0; i < 10; i++)
         {
-            var client = new HttpClient { BaseAddress = _client.BaseAddress };
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var task = client.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
+            var task = _client.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
             {
                 Title = $"Concurrent {i}",
                 Password = $"Password{i}123!"
@@ -251,7 +250,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
         });
         createSw.Stop();
 
-        var created = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
 
         // Act - Retrieve password (decrypts)
         var getSw = Stopwatch.StartNew();
@@ -294,7 +293,7 @@ public class PerformanceTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var passwords = await response.Content.ReadFromJsonAsync<List<PasswordEntryResponse>>();
+        var passwords = await JsonHelper.DeserializeAsync<List<PasswordEntryResponse>>(response.Content);
         passwords.Should().HaveCountGreaterOrEqualTo(50);
 
         _output.WriteLine($"Time to decrypt 50+ passwords: {sw.ElapsedMilliseconds}ms");

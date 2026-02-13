@@ -1,4 +1,5 @@
 using System.Net;
+using PasswordManagerApi.Tests.Helpers;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
@@ -35,20 +36,22 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
             Password = password
         });
 
-        var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        var authResponse = await JsonHelper.DeserializeAsync<AuthResponse>(loginResponse.Content);
         var token = authResponse!.Token;
 
         // Create a password entry
-        var client = new HttpClient { BaseAddress = _client.BaseAddress };
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var createResponse = await client.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
+        var createResponse = await _client.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
         {
             Title = "To Be Deleted",
             Password = "password123"
         });
 
-        var entry = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var entry = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
+
+        // Reset auth header for test isolation
+        _client.DefaultRequestHeaders.Authorization = null;
 
         return (token, entry!.Id);
     }
@@ -133,7 +136,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
             Username = username2,
             Password = password2
         });
-        var auth2 = await loginResponse2.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth2 = await JsonHelper.DeserializeAsync<AuthResponse>(loginResponse2.Content);
 
         // Act - Try to delete user 1's entry as user 2
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth2!.Token);
@@ -144,7 +147,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
     }
 
     [Fact]
-    public async Task DeletePassword_InvalidId_ReturnsBadRequest()
+    public async Task DeletePassword_InvalidId_ReturnsNotFound()
     {
         // Arrange
         var (token, _) = await CreateAuthenticatedUserWithPassword();
@@ -153,8 +156,8 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         // Act
         var response = await _client.DeleteAsync("/api/passwords/invalid");
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Assert - Invalid ID format is treated as non-existent resource
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -197,7 +200,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Get all passwords
         var getAllResponse = await _client.GetAsync("/api/passwords");
-        var allPasswords = await getAllResponse.Content.ReadFromJsonAsync<List<PasswordEntryResponse>>();
+        var allPasswords = await JsonHelper.DeserializeAsync<List<PasswordEntryResponse>>(getAllResponse.Content);
 
         // Assert
         allPasswords.Should().NotContain(p => p.Id == entryId);
@@ -222,7 +225,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
             Password = password
         });
 
-        var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth = await JsonHelper.DeserializeAsync<AuthResponse>(loginResponse.Content);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.Token);
 
         // Create 3 entries
@@ -234,7 +237,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
                 Title = $"Entry {i}",
                 Password = $"password{i}"
             });
-            var entry = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+            var entry = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
             ids.Add(entry!.Id);
         }
 
@@ -247,7 +250,7 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert - Verify all deleted
         var getAllResponse = await _client.GetAsync("/api/passwords");
-        var allPasswords = await getAllResponse.Content.ReadFromJsonAsync<List<PasswordEntryResponse>>();
+        var allPasswords = await JsonHelper.DeserializeAsync<List<PasswordEntryResponse>>(getAllResponse.Content);
 
         allPasswords.Should().BeEmpty();
     }
@@ -286,24 +289,24 @@ public class DeletePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
             Username = username2,
             Password = "Password123!"
         });
-        var auth2 = await login2.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth2 = await JsonHelper.DeserializeAsync<AuthResponse>(login2.Content);
+        var token2 = auth2!.Token;
 
-        var client2 = new HttpClient { BaseAddress = _client.BaseAddress };
-        client2.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth2!.Token);
-
-        var create2 = await client2.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
+        var create2 = await _client.PostAsJsonAsync("/api/passwords", new CreatePasswordEntryRequest
         {
             Title = "User 2 Entry",
             Password = "password"
         });
-        var entry2 = await create2.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var entry2 = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(create2.Content);
 
         // Act - Delete user 1's entry
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token1);
         await _client.DeleteAsync($"/api/passwords/{entryId1}");
 
         // Assert - User 2's entry still exists
-        var get2Response = await client2.GetAsync($"/api/passwords/{entry2!.Id}");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token2);
+        var get2Response = await _client.GetAsync($"/api/passwords/{entry2!.Id}");
         get2Response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

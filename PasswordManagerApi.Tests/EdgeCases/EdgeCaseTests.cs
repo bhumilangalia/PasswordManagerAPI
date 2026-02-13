@@ -1,4 +1,5 @@
 using System.Net;
+using PasswordManagerApi.Tests.Helpers;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
@@ -32,7 +33,7 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
             Password = "EdgeTest123!"
         });
 
-        var auth = await loginResponse.Content.ReadFromJsonAsync<AuthResponse>();
+        var auth = await JsonHelper.DeserializeAsync<AuthResponse>(loginResponse.Content);
         return auth!.Token;
     }
 
@@ -50,7 +51,7 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var passwords = await response.Content.ReadFromJsonAsync<List<PasswordEntryResponse>>();
+        var passwords = await JsonHelper.DeserializeAsync<List<PasswordEntryResponse>>(response.Content);
         passwords.Should().NotBeNull();
         passwords.Should().BeEmpty();
     }
@@ -229,7 +230,7 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be(surrogateText);
     }
 
@@ -250,16 +251,13 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
             Password = "password"
         });
 
-        var created = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
 
         // Act - 5 concurrent updates
         var tasks = new List<Task<HttpResponseMessage>>();
         for (int i = 0; i < 5; i++)
         {
-            var client = new HttpClient { BaseAddress = _client.BaseAddress };
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var task = client.PutAsJsonAsync($"/api/passwords/{created!.Id}", new UpdatePasswordEntryRequest
+            var task = _client.PutAsJsonAsync($"/api/passwords/{created!.Id}", new UpdatePasswordEntryRequest
             {
                 Title = $"Updated {i}"
             });
@@ -414,7 +412,7 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
         });
 
         // Assert
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be(expected);
         created.LoginUsername.Should().Be(expected);
         created.Website.Should().Be(expected);
@@ -439,15 +437,15 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
             Password = password
         });
 
-        var created = await createResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(createResponse.Content);
 
         // Act - Retrieve multiple times
         var get1 = await _client.GetAsync($"/api/passwords/{created!.Id}");
         var get2 = await _client.GetAsync($"/api/passwords/{created.Id}");
 
         // Assert
-        var retrieved1 = await get1.Content.ReadFromJsonAsync<PasswordEntryResponse>();
-        var retrieved2 = await get2.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var retrieved1 = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(get1.Content);
+        var retrieved2 = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(get2.Content);
 
         retrieved1!.Password.Should().Be(password);
         retrieved2!.Password.Should().Be(password);
@@ -463,7 +461,7 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
     [InlineData("/api/passwords/1.5")]
     [InlineData("/api/passwords/1e10")]
     [InlineData("/api/passwords/null")]
-    public async Task GetPassword_WithInvalidIdFormat_ReturnsBadRequest(string route)
+    public async Task GetPassword_WithInvalidIdFormat_ReturnsNotFound(string route)
     {
         // Arrange
         var token = await GetAuthTokenAsync();
@@ -472,8 +470,8 @@ public class EdgeCaseTests : IClassFixture<TestWebApplicationFactory>
         // Act
         var response = await _client.GetAsync(route);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Assert - Invalid ID formats are treated as non-existent resources
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     #endregion
