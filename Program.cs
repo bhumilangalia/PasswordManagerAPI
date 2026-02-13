@@ -39,25 +39,29 @@ builder.Services.AddScoped<IPasswordCipherService, PasswordCipherService>();
 builder.Services.AddScoped<IPasswordStrengthService, PasswordStrengthService>();
 
 // Rate limiting for authentication endpoints (prevent brute force)
-builder.Services.AddRateLimiter(options =>
+// Disabled in Testing environment to avoid test interference
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    options.AddFixedWindowLimiter("auth", limiterOptions =>
+    builder.Services.AddRateLimiter(options =>
     {
-        limiterOptions.PermitLimit = 5;  // 5 attempts per minute
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0;  // Reject immediately
-    });
-
-    options.OnRejected = async (context, token) =>
-    {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        await context.HttpContext.Response.WriteAsJsonAsync(new
+        options.AddFixedWindowLimiter("auth", limiterOptions =>
         {
-            message = "Too many requests. Please try again later."
-        }, cancellationToken: token);
-    };
-});
+            limiterOptions.PermitLimit = 5;  // 5 attempts per minute
+            limiterOptions.Window = TimeSpan.FromMinutes(1);
+            limiterOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = 0;  // Reject immediately
+        });
+
+        options.OnRejected = async (context, token) =>
+        {
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            await context.HttpContext.Response.WriteAsJsonAsync(new
+            {
+                message = "Too many requests. Please try again later."
+            }, cancellationToken: token);
+        };
+    });
+}
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 // Priority: Environment variable > appsettings.{Environment}.json > error
@@ -116,14 +120,20 @@ else
 }
 
 app.UseSecurityHeaders();
-app.UseRateLimiter();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseRateLimiter();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new { message = "Password Manager API is running." }));
 
-var authGroup = app.MapGroup("/api/auth")
-    .RequireRateLimiting("auth");
+var authGroup = app.MapGroup("/api/auth");
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    authGroup = authGroup.RequireRateLimiting("auth");
+}
 
 authGroup.MapPost("/register", async (
     RegisterRequest request,

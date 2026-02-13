@@ -53,7 +53,7 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var result = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         result.Should().NotBeNull();
         result!.Password.Should().Be("NewPassword@456");
         result.Title.Should().Be("Updated Entry");
@@ -90,7 +90,7 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var result = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         result.Should().NotBeNull();
         result!.Password.Should().Be(existingPassword);
         result.Title.Should().Be("New Title");
@@ -166,11 +166,13 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var response = await _client.PutAsJsonAsync($"/api/passwords/{entry.Id}", updateRequest);
 
         // Assert
-        // EXPECTED TO FAIL: Even though new password is provided at line 302,
-        // line 313 still tries to decrypt entry.EncryptedPassword for the response
-        // This will fail because we corrupted the old password
-        // Proper implementation should use the new plaintext password in response
-        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        // When new password is provided, the API correctly uses the new plaintext password
+        // without attempting to decrypt the old (corrupted) password (Program.cs lines 396-401)
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
+        result.Should().NotBeNull();
+        result!.Password.Should().Be("NewValidPassword@123");
+        result.Title.Should().Be("Updated Entry");
     }
 
     [Fact]
@@ -204,7 +206,7 @@ public class UpdatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var result = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         result.Should().NotBeNull();
         result!.Password.Should().Be(unicodePassword);
     }
