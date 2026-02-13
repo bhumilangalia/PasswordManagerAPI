@@ -62,7 +62,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created.Should().NotBeNull();
         created!.Id.Should().BeGreaterThan(0);
         created.Title.Should().Be("Test Service");
@@ -91,7 +91,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.PasswordStrength.Should().NotBeNull();
         created.PasswordStrength.Should().BeOneOf(PasswordStrength.Strong, PasswordStrength.VeryStrong);
     }
@@ -158,7 +158,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be("Minimal Entry");
         created.LoginUsername.Should().BeNull();
         created.Website.Should().BeNull();
@@ -185,7 +185,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var response = await _client.PostAsJsonAsync("/api/passwords", request);
 
         // Assert
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be("Trim Test");
         created.LoginUsername.Should().Be("user@example.com");
         created.Website.Should().Be("https://example.com");
@@ -212,7 +212,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be("测试服务");
         created.Password.Should().Be("密碼123!🔐");
     }
@@ -236,7 +236,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.Title.Should().Be("Special <>&\"' Test");
         created.Password.Should().Be("P@$$w0rd!<>&\"'");
     }
@@ -278,11 +278,11 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/passwords", request);
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
 
         // Retrieve and verify
         var getResponse = await _client.GetAsync($"/api/passwords/{created!.Id}");
-        var retrieved = await getResponse.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var retrieved = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(getResponse.Content);
 
         // Assert
         retrieved!.Password.Should().Be(plaintextPassword, "Password should be decrypted when retrieved");
@@ -307,7 +307,7 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         var after = DateTime.UtcNow;
 
         // Assert
-        var created = await response.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var created = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response.Content);
         created!.CreatedAtUtc.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
         created.UpdatedAtUtc.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
         created.CreatedAtUtc.Should().Be(created.UpdatedAtUtc, "Initial timestamps should match");
@@ -334,8 +334,8 @@ public class CreatePasswordEndpointTests : IClassFixture<TestWebApplicationFacto
         });
 
         // Assert
-        var entry1 = await response1.Content.ReadFromJsonAsync<PasswordEntryResponse>();
-        var entry2 = await response2.Content.ReadFromJsonAsync<PasswordEntryResponse>();
+        var entry1 = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response1.Content);
+        var entry2 = await JsonHelper.DeserializeAsync<PasswordEntryResponse>(response2.Content);
 
         entry1!.Id.Should().NotBe(entry2!.Id);
         entry1.Password.Should().Be("password1");
