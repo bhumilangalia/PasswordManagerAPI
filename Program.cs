@@ -27,6 +27,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+// Database configuration (tests will replace with InMemory in TestWebApplicationFactory)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -92,10 +94,14 @@ builder.Services.AddHsts(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// Skip database initialization during testing (uses InMemory provider)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.EnsureCreated();
+    }
 }
 
 if (app.Environment.IsDevelopment())

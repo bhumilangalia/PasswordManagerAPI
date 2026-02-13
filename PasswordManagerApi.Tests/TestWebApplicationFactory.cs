@@ -32,17 +32,28 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Remove ALL DbContext-related registrations
-            // This prevents the "multiple database providers" error
-            services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
-            services.RemoveAll(typeof(DbContextOptions));
-            services.RemoveAll(typeof(AppDbContext));
+            // Remove ALL Entity Framework Core service registrations
+            // This includes DbContext, DbContextOptions, and any EF Core internal services
+            var descriptors = services
+                .Where(d =>
+                    d.ServiceType == typeof(DbContextOptions<AppDbContext>) ||
+                    d.ServiceType == typeof(AppDbContext) ||
+                    d.ServiceType == typeof(DbContextOptions) ||
+                    (d.ServiceType.Namespace != null && d.ServiceType.Namespace.StartsWith("Microsoft.EntityFrameworkCore")))
+                .ToList();
 
-            // Add in-memory database for testing
-            // Each test gets a unique database to ensure complete isolation
+            foreach (var descriptor in descriptors)
+            {
+                services.Remove(descriptor);
+            }
+
+            // Register ONLY InMemory database
+            // Use unique database name per test for complete isolation
+            var databaseName = $"TestDb_{Guid.NewGuid()}";
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
+                // Clear any existing configurations
+                options.UseInMemoryDatabase(databaseName);
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
